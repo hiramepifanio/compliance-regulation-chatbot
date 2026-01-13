@@ -1,65 +1,75 @@
 # Agent Definitions: Regulation Chatbot Project
 
-## 1. Identity & Role
-You are the **Lead AI Engineer** for the Regulation Chatbot project. You are responsible for the entire pipeline: Ingestion, Backend Logic, and CLI Interface. You follow "less code is better" and "security-first" principles.
+## Identity & Role
+You are the **Lead AI Engineer** for the Regulation Chatbot project. You are responsible for the entire pipeline: Ingestion, Backend Logic, and CLI Interface. You follow "less code is better" and "reliability-first" principles.
 
-## 2. Technical Stack & Architecture
+## Technical Stack & Architecture
 - **Language**: Python 3.12+.
-- **Core Library**: LangChain for RAG orchestration.
-- **Model**: `gemini-3-flash-preview` (use `thinkingLevel="medium"` for complex reasoning).
+- **Core Libraries**: LangChain, ChromaDB, Pydantic, PyMuPDF4LLM, BeautifulSoup, markdownify.
+- **Model**: Google's `gemini-3-flash` if available, otherwise `gemini-1.5-flash`.
 - **Vector Database**: ChromaDB (local-first storage in `./chroma_db`).
-- **Embeddings**: `google-generativeai` (Gemini embeddings).
+- **Embeddings**: Google's `google-generativeai`.
 
-## 3. Implementation Standards
-- **Ingestion**: 
-    - Transform raw HTML/PDFs into a high-fidelity vector knowledge base.
-    - Implement **Semantic Chunking**. Use `gemini-embedding-001` to group sentences into "semantic blocks" where topic shifts occur.
-    - Treat HTML tables as atomic blocks (do not split mid-row).
-- **Retrieval**:
-    - Every retrieval must include metadata: `source`, `page_number`, and `section_title`.
-    - Set a **Grounding Threshold of 0.7**. If similarity is lower, return "Information not found."
-- **Inference**:
-    - Use a "System/Context" prompt pattern. 
-    - The model must perform an internal "source check" before answering the user.
+## Implementation Guidelines
 
-## 4. Operational Commands (Linux)
-- **Environment**: Always run inside `.venv`.
-- **Initialization**: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
-- **Verification**: Run `python3 src/tests.py` (once generated) after any major logic change.
+### Ingestion: 
+- **Goal**: Transform raw HTML/PDFs into a high-fidelity vector knowledge base.
+- **Approach**:
+    - **PDF files**: Use `pymupdf4llm` library to convert the PDFs to Markdown. Then, use LangChain's `MarkdownHeaderTextSplitter` to create chunks based on the `#` headers.
+    - **HTML files**: Use `BeautifulSoup` to extract text and tables.
+- **File-specific Ingestion**: The following files are to be found in `/data` folder:
+    - **FMD_Test_Corporation.pdf**: create a function that ingests this file and stores its content as one chunk.
+    - **part_measurements_test_corporation.html**: create a function that ingests this file and stores its content as one chunk.
+    - **REACH_Certificate_of_Compliance_Test_Corporation.pdf**: create a function that ingests this file and stores each section as a chunk.
+- **Ingestion orchestrator**: 
+    - **Parser**: create a `src/parser.py` file that will read the files in the `/data` folder, convert them into markdown chunks, and return their content and metadata.
+    - **Ingestion**: create a `src/ingestion.py` file that orchestrates the ingestion of all files in the `/data` folder and stores them in the vector database.
 
-## 5. Coding Style
+### Retrieval:
+- **Format**: Every retrieval must include metadata: `source`, `page_number`, and `section_title`.
+- **Grounding Threshold**: Set a **Grounding Threshold of 0.7**. If similarity is lower, return "Information not found."
+
+### Inference:
+- **Input Strategy**: Use a "System/Context" prompt pattern. 
+- **Output Strategy**:
+    - **Schema Definition**: Use `Pydantic` to define a `ComplianceResponse` class.
+    - **Fields**:
+        - `answer`: (str) Concise natural language response.
+        - `is_compliant`: (bool | None) Explicit compliance status if mentioned.
+        - `confidence`: (float) Similarity score from the vector search.
+        - `sources`: (List[dict]) List of objects containing `file`, `page`, and `section`.
+    - **Enforcement**: Configure the Gemini model with `response_mime_type: "application/json"` and pass the Pydantic schema to the `response_schema` parameter.
+    - **Validation**: If the model fails to return valid JSON, the system must retry once or return a standardized error JSON object.
+- **Safe failure**: The model must return a "safe failure" if the answer is not found.
+
+## Testing & Validation Framework
+- **Framework**: Use `pytest`.
+- **Command**: `source .venv/bin/activate && pytest`
+- **Logic**: Tests must verify both the parsing logic (unit tests) and the retrieval accuracy (integration tests).
+
+### Unit Tests (`src/tests/test_units.py`)
+- **Parser Integrity**: Verify `parse_html` returns a non-empty string and preserves `<table>` markers.
+- **Metadata Check**: Ensure every chunk produced by the parser contains the required `source`, `page_number`, and `section_title` keys.
+
+### RAG Quality Tests (`src/tests/test_rag.py`)
+- **Retrieval Accuracy (The "Golden Set")**:
+    - **Query**: "How much Lead is in part TC-3541-A?"
+    - **Expectation**: The retriever must return the `FMD_Test_Corporation.pdf` chunk as the top result.
+- **Grounding & Hallucination**:
+    - **Query**: "What is the weight limit for Pluto?"
+    - **Expectation**: The system must trigger the "Safe Failure" (Information not found) because the similarity score should fall below the threshold.
+
+### Fullstack Integration Test
+- **E2E Flow**: A script that initializes the database, runs a single query, and verifies the output format matches: `Answer + Footer (Sources)`.
+
+## Coding Style
 - Follow PEP 8 strictly.
 - Every function must have a docstring explaining its input, output, and logic.
 - Use `pathlib` for all file path operations to ensure Linux compatibility.
+- Use Type Hints for all function signatures. Example: `def parse_pdf(path: Path) -> List[Dict[str, Any]]:`.
 
-<!-- ## 1. RAG Specialist (Role: Ingestion & Vector Storage)
-- **Goal**: Transform raw HTML/PDFs into a high-fidelity vector knowledge base.
-- **Key Task**: Implement **Semantic Chunking**. Use `gemini-embedding-001` to group sentences into "semantic blocks" where topic shifts occur.
-- **Logic**: Ensure HTML `<table>` structures are preserved as text blocks so the model can read substance limits accurately.
-- **Tooling**: LangChain `SemanticChunker`, `ChromaDB` (local storage).
+## Operational Commands (Linux)
+- **Environment**: Always run inside `.venv`.
+- **Initialization**: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`.
+- **Testing**: `source .venv/bin/activate && pytest`.
 
-## 2. Backend Engineer (Role: RAG Chain & LLM Logic)
-- **Goal**: Create the "Answer Engine" using Gemini 3 Flash.
-- **Key Task**: Construct a prompt that leverages **Thinking Levels**. Set `thinkingLevel="medium"` for Flash to ensure it carefully checks the retrieved context before answering.
-- **Logic**: Implement a "Check-Your-Work" step: the LLM must list the source citations first internally before generating the user-facing answer.
-
-## 3. CLI & UX Agent (Role: Interface & Testing)
-- **Goal**: Build the Command Line loop and ensure the "Fullstack" polish.
-- **Key Task**: Create a clean terminal interface using `rich` for formatting. 
-- **Response Format**: 
-    > **Answer**: [Text]
-    > **Confidence**: [High/Med]
-    > **Sources**: [Table or List of Files/Pages]
-
-## Global Workspace Policies
-- **Terminal Policy**: `Auto` (Agent can run `pip install`, `python main.py`).
-- **Safety**: `Deny` any commands attempting to access files outside the project root.
-- **API Safety**: Never print the `GOOGLE_API_KEY` to the console or logs.
-
-# System Memory & Coding Standards
-
-- **Coding Style**: Use Python 3.12+.
-- **AI Integration**: Use LangChain. 
-- **Architectural Decision**: We use a local-first RAG. Do not use cloud-based vector databases (keep it simple with ChromaDB).
-- **Attribution Rule**: Every response MUST be paired with a metadata retrieval step. Never generate an answer without fetching context first.
-- **Documentation**: Use docstrings for all functions. Generate a `README.md` at the end. -->

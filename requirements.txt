@@ -1,0 +1,9 @@
+langchain
+langchain-google-genai
+langchain-chroma
+chromadb
+pdfplumber
+beautifulsoup4
+python-dotenv
+markdownify
+langchain-experimental
