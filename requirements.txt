@@ -9,3 +9,5 @@ markdownify
 langchain-experimental
 pymupdf4llm
 pytest
+pydantic
+typing-extensions
