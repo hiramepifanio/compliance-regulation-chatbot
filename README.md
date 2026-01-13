@@ -58,29 +58,36 @@ GROUNDING_THRESHOLD=0.5
 ```
 *Note: A `GROUNDING_THRESHOLD` of 0.5 is recommended for optimal recall with conservative embedding scores.*
 
-### 3. Ingest Data
-Before querying, index the documents in the `/data` folder:
+## 🔍 Usage
+
+The system automatically manages document ingestion. The first time you run it, or if the database is empty, it will index the documents in the `/data` folder before answering your query.
+
+### Single Query
+Run a single query WITH LOGS (RECOMMENDED: use verbose mode for ingestion logs and confidence scores):
 ```bash
-python3 src/ingestion.py
+python3 src/main.py "How much lead is in part TC-3541-A?" -v
 ```
 
-## 🔍 How to Use
-
-### CLI Interface
-Run a single query (RECOMMENDED: use verbose mode for confidence scores):
+Run a single query WITHOUT LOGS:
 ```bash
 python3 src/main.py "How much lead is in part TC-3541-A?"
 ```
 
-Enter interactive mode:
+### Interactive Mode
+Enter interactive mode (ingestion will still happen automatically if needed):
 ```bash
 python3 src/main.py
 ```
 
-Enable verbose mode to see confidence scores (RECOMMENDED):
+### Database Management
+To clear the database and force a fresh re-ingestion:
 ```bash
-python3 src/main.py "Your query" -v
+python3 src/main.py --wipe
 ```
+
+### Options
+- `-v`, `--verbose`: Show detailed logs (ingestion progress, retrieval confidence, etc.).
+- `--wipe`: Clear the local vector database before starting.
 
 ## 🧪 Evaluation & Testing
 

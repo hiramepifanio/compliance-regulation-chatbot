@@ -3,6 +3,7 @@ import argparse
 from typing import Optional
 from src.retriever import retrieve_context
 from src.inference import generate_answer, ComplianceResponse
+from src.ingestion import ingest_data, is_ingested, clear_database
 
 def run_query(query: str, verbose: bool = False):
     """
@@ -39,9 +40,19 @@ def main():
     parser = argparse.ArgumentParser(description="Regulation Compliance Chatbot")
     parser.add_argument("query", nargs="?", help="The natural language query to ask the chatbot.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output.")
+    parser.add_argument("--wipe", action="store_true", help="Wipe the database before proceeding.")
     
     args = parser.parse_args()
-    
+
+    if args.wipe:
+        clear_database()
+
+    # Automatic ingestion check
+    if not is_ingested():
+        if args.verbose:
+            print("Database is empty. Starting automatic ingestion...")
+        ingest_data(verbose=args.verbose)
+
     if args.query:
         run_query(args.query, args.verbose)
     else:
