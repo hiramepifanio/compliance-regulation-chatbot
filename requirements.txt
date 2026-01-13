@@ -7,3 +7,5 @@ beautifulsoup4
 python-dotenv
 markdownify
 langchain-experimental
+pymupdf4llm
+pytest

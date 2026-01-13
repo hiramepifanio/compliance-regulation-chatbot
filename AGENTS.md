@@ -26,7 +26,7 @@ You are the **Lead AI Engineer** for the Regulation Chatbot project. You are res
     - **Ingestion**: create a `src/ingestion.py` file that orchestrates the ingestion of all files in the `/data` folder and stores them in the vector database.
 
 ### Retrieval:
-- **Format**: Every retrieval must include metadata: `source`, `page_number`, and `section_title`.
+- **Format**: Every retrieval must include metadata: `source` and `section_title`.
 - **Grounding Threshold**: Set a **Grounding Threshold of 0.7**. If similarity is lower, return "Information not found."
 
 ### Inference:
@@ -37,7 +37,7 @@ You are the **Lead AI Engineer** for the Regulation Chatbot project. You are res
         - `answer`: (str) Concise natural language response.
         - `is_compliant`: (bool | None) Explicit compliance status if mentioned.
         - `confidence`: (float) Similarity score from the vector search.
-        - `sources`: (List[dict]) List of objects containing `file`, `page`, and `section`.
+        - `sources`: (List[dict]) List of objects containing `file` and `section`.
     - **Enforcement**: Configure the Gemini model with `response_mime_type: "application/json"` and pass the Pydantic schema to the `response_schema` parameter.
     - **Validation**: If the model fails to return valid JSON, the system must retry once or return a standardized error JSON object.
 - **Safe failure**: The model must return a "safe failure" if the answer is not found.
@@ -49,7 +49,7 @@ You are the **Lead AI Engineer** for the Regulation Chatbot project. You are res
 
 ### Unit Tests (`src/tests/test_units.py`)
 - **Parser Integrity**: Verify `parse_html` returns a non-empty string and preserves `<table>` markers.
-- **Metadata Check**: Ensure every chunk produced by the parser contains the required `source`, `page_number`, and `section_title` keys.
+- **Metadata Check**: Ensure every chunk produced by the parser contains the required `source` and `section_title` keys.
 
 ### RAG Quality Tests (`src/tests/test_rag.py`)
 - **Retrieval Accuracy (The "Golden Set")**:
@@ -69,7 +69,11 @@ You are the **Lead AI Engineer** for the Regulation Chatbot project. You are res
 - Use Type Hints for all function signatures. Example: `def parse_pdf(path: Path) -> List[Dict[str, Any]]:`.
 
 ## Operational Commands (Linux)
-- **Environment**: Always run inside `.venv`.
+- **Environment**: Always run inside `.venv`
 - **Initialization**: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`.
+- **One-off Commands**: `source .venv/bin/activate && <command>`.
 - **Testing**: `source .venv/bin/activate && pytest`.
+
+## Documentation
+- **Summary**: At the end of each coding section, add a `docs/this_feature.md` summary markdown document for future reference on what has been built.
 
