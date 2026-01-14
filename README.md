@@ -102,7 +102,7 @@ python3 src/main.py --wipe
 ### Automated Tests
 Run logic and unit tests:
 ```bash
-pytest src/tests/test_rag.py
+pytest
 ```
 
 ## 📂 Project Structure
@@ -111,4 +111,4 @@ pytest src/tests/test_rag.py
 - `src/retriever.py`: Similarity search with grounding threshold logic.
 - `src/inference.py`: Structured JSON response generation via Gemini.
 - `src/main.py`: CLI Entry point.
-- `docs/`: Detailed design and retrieval analysis.
+- `docs/`: Detailed design and engineering analysis.
