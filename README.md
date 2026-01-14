@@ -41,12 +41,20 @@ This system allows you to ask natural language questions about specific regulati
 
 ## 🛠️ Setup Instructions
 
+### 0. Cloning
+Clone this repository:
+```bash
+git clone https://github.com/hiramepifanio/compliance-regulation-chatbot.git
+cd compliance-regulation-chatbot
+```
+
 ### 1. Environment Setup
 Create a virtual environment and install dependencies:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 ```
 
 ### 2. Configuration
